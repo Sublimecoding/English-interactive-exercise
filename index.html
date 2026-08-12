@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Interactive Chunk Trainer</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --success: #16a34a;
+            --error: #dc2626;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .panel {
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Flashcard Styles */
+        .card-container {
+            perspective: 1000px;
+            height: 220px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #e0e7ff;
+            color: #3730a3;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        /* Quiz Styles */
+        .quiz-option {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .quiz-option:hover {
+            background: #f1f5f9;
+        }
+
+        .quiz-option.correct {
+            background: #dcfce7;
+            border-color: var(--success);
+            color: #14532d;
+            font-weight: bold;
+        }
+
+        .quiz-option.incorrect {
+            background: #fee2e2;
+            border-color: var(--error);
+            color: #7f1d1d;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-audio {
+            background: #f1f5f9;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>English Lexical Trainer</h1>
+        <p>Master English chunks through active recall and pronunciation.</p>
+    </header>
+
+    <div class="tab-group">
+        <button class="tab-btn active" onclick="switchTab('flashcards')">1. Flashcards</button>
+        <button class="tab-btn" onclick="switchTab('quiz')">2. Practice Quiz</button>
+    </div>
+
+    <!-- TAB 1: FLASHCARDS -->
+    <div id="flashcards" class="panel active">
+        <div class="card-container" onclick="flipCard()">
+            <div id="card" class="card">
+                <div class="card-front">
+                    <span id="card-type" class="badge">Collocation</span>
+                    <h2 id="card-front-text">Make a decision</h2>
+                    <p style="color: #64748b; font-size: 0.9rem;">(Click card to reveal meaning)</p>
+                </div>
+                <div class="card-back">
+                    <h3 id="card-back-meaning">To decide between options</h3>
+                    <p id="card-back-example"><em>"We need to make a decision by 5 PM."</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-audio" onclick="event.stopPropagation(); speakCurrentChunk();">🔊 Listen to Pronunciation</button>
+            <button class="btn" onclick="nextCard()">Next Card →</button>
+        </div>
+    </div>
+
+    <!-- TAB 2: QUIZ -->
+    <div id="quiz" class="panel">
+        <span class="badge">Fill in the missing chunk</span>
+        <h3 id="quiz-question" style="margin-top: 10px;">Question loading...</h3>
+        
+        <div id="quiz-options"></div>
+
+        <p id="quiz-feedback" style="font-weight: bold; margin-top: 15px;"></p>
+        <button id="quiz-next-btn" class="btn" style="display: none; margin-top: 10px;" onclick="loadNextQuiz()">Next Question</button>
+    </div>
+
+    <script>
+        // Data Structure holding the English Chunks
+        const chunks = [
+            {
+                type: "Collocation",
+                chunk: "Make a decision",
+                meaning: "To choose between options (Not 'do' a decision)",
+                example: "We need to make a decision by 5 PM.",
+                question: "We can't delay any longer; we have to _____ a decision today.",
+                options: ["do", "make", "take", "create"],
+                answer: 1
+            },
+            {
+                type: "Sentence Frame",
+                chunk: "If I were in your shoes...",
+                meaning: "Used to give advice politely",
+                example: "If I were in your shoes, I would ask for a raise.",
+                question: "_____ in your shoes, I would talk to the manager directly.",
+                options: ["If I am", "If I was", "If I were", "If I would be"],
+                answer: 2
+            },
+            {
+                type: "Collocation",
+                chunk: "Pay attention to",
+                meaning: "To focus carefully on someone or something",
+                example: "Please pay attention to the safety instructions.",
+                question: "You need to pay _____ to the details on the report.",
+                options: ["attention", "notice", "care", "mind"],
+                answer: 0
+            },
+            {
+                type: "Fixed Expression",
+                chunk: "Change your mind",
+                meaning: "To alter your opinion or decision",
+                example: "Let me know if you change your mind about coming.",
+                question: "She was going to quit, but she changed her _____ after talking to us.",
+                options: ["head", "thought", "mind", "brain"],
+                answer: 2
+            }
+        ];
+
+        // --- Flashcard Logic ---
+        let currentCardIndex = 0;
+
+        function updateCardDisplay() {
+            const data = chunks[currentCardIndex];
+            document.getElementById('card').classList.remove('flipped');
+            
+            setTimeout(() => {
+                document.getElementById('card-type').innerText = data.type;
+                document.getElementById('card-front-text').innerText = data.chunk;
+                document.getElementById('card-back-meaning').innerText = data.meaning;
+                document.getElementById('card-back-example').innerText = `"${data.example}"`;
+            }, 150);
+        }
+
+        function flipCard() {
+            document.getElementById('card').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            currentCardIndex = (currentCardIndex + 1) % chunks.length;
+            updateCardDisplay();
+        }
+
+        // --- Web Speech API (Text to Speech) ---
+        function speakCurrentChunk() {
+            const text = chunks[currentCardIndex].chunk;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9; // Slightly slower for language learners
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- Quiz Logic ---
+        let currentQuizIndex = 0;
+
+        function loadQuiz() {
+            const data = chunks[currentQuizIndex];
+            document.getElementById('quiz-question').innerText = data.question;
+            document.getElementById('quiz-feedback').innerText = '';
+            document.getElementById('quiz-next-btn').style.display = 'none';
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            data.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(idx, data.answer, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct, btnElement) {
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach(opt => opt.disabled = true); // Disable further clicks
+
+            if (selected === correct) {
+                btnElement.classList.add('correct');
+                document.getElementById('quiz-feedback').innerText = "✨ Correct! Great job.";
+                document.getElementById('quiz-feedback').style.color = "var(--success)";
+            } else {
+                btnElement.classList.add('incorrect');
+                options[correct].classList.add('correct');
+                document.getElementById('quiz-feedback').innerText = "❌ Incorrect. Notice the correct chunk pairing above.";
+                document.getElementById('quiz-feedback').style.color = "var(--error)";
+            }
+
+            document.getElementById('quiz-next-btn').style.display = 'inline-block';
+        }
+
+        function loadNextQuiz() {
+            currentQuizIndex = (currentQuizIndex + 1) % chunks.length;
+            loadQuiz();
+        }
+
+        // --- Tab Navigation ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'quiz') {
+                loadQuiz();
+            }
+        }
+
+        // Initialize First Card
+        updateCardDisplay();
+    </script>
+</body>
+</html>
